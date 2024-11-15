@@ -28,6 +28,7 @@
         packages = with pkgs; [
           air
           go
+          gopls
           gotools
           golangci-lint
         ];
