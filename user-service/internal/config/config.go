@@ -2,8 +2,8 @@ package config
 
 type Config struct {
 	host
-	DB      postgreSQL
-	Logging logging
+	PostgreSQL postgreSQL
+	Logging    logging
 }
 
 type host struct {

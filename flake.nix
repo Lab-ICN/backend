@@ -28,9 +28,11 @@
         packages = with pkgs; [
           air
           go
+          goose
           gopls
           gotools
           golangci-lint
+          nodePackages.sql-formatter
         ];
       };
     });
