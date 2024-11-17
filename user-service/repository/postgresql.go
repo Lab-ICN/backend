@@ -18,8 +18,8 @@ func NewUserPostgreSQL(conn *pgxpool.Pool) IUserStorage {
 	return &postgresql{conn}
 }
 
-func (p *postgresql) Create(ctx context.Context, user *types.CreateUserParams) (int64, error) {
-	var id int64
+func (p *postgresql) Create(ctx context.Context, user *types.CreateUserParams) (uint64, error) {
+	var id uint64
 	if err := p.conn.QueryRow(ctx, `
         INSERT INTO users ("email", "username", "fullname", "is_member", "internship_start_date")
         VALUES (@email, @username, @fullname, @is_member, @internship_start_date)
@@ -103,7 +103,7 @@ func (p *postgresql) ListPassed(ctx context.Context, year uint) ([]User, error) 
 	return users, nil
 }
 
-func (p *postgresql) Get(ctx context.Context, id int64) (User, error) {
+func (p *postgresql) Get(ctx context.Context, id uint64) (User, error) {
 	rows, err := p.conn.Query(ctx, `SELECT * FROM users WHERE id = $1`, id)
 	if err != nil {
 		return User{}, err
@@ -116,7 +116,7 @@ func (p *postgresql) GetByEmail(ctx context.Context, email string) (User, error)
 	panic("unimplemented")
 }
 
-func (p *postgresql) Delete(ctx context.Context, id int64) error {
+func (p *postgresql) Delete(ctx context.Context, id uint64) error {
 	_, err := p.conn.Exec(ctx, `DELETE FROM users WHERE id = $1`, id)
 	if err != nil {
 		return err
