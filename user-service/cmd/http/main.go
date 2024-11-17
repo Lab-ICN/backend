@@ -77,7 +77,7 @@ func gracefulShutdown(ctx context.Context, cancel context.CancelFunc, tasks ...f
 		go func() {
 			defer wg.Done()
 			if err := task(ctx); err != nil {
-				log.Printf("Task failed: %w\n", err)
+				log.Printf("Task failed: %v\n", err)
 			}
 		}()
 	}

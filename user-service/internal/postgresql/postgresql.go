@@ -23,11 +23,11 @@ func NewConn(ctx context.Context, cfg *pgx.ConnConfig) (*pgx.Conn, error) {
 func NewPool(ctx context.Context, cfg *config.Config) (*pgxpool.Pool, error) {
 	uri := fmt.Sprintf(
 		"postgres://%s:%s@%s:%d/%s?sslmode=disable",
-		cfg.DB.Username,
-		cfg.DB.Password,
-		cfg.DB.Address,
-		cfg.DB.Port,
-		cfg.DB.Database,
+		cfg.PostgreSQL.Username,
+		cfg.PostgreSQL.Password,
+		cfg.PostgreSQL.Address,
+		cfg.PostgreSQL.Port,
+		cfg.PostgreSQL.Database,
 	)
 	_cfg, err := pgxpool.ParseConfig(uri)
 	if err != nil {
