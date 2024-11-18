@@ -21,14 +21,16 @@ const (
 )
 
 type IUserUsecase interface {
-	RegisterUser(
+	Register(
 		ctx context.Context,
 		user *types.CreateUserParams,
 	) (types.User, error)
-	RegisterUserByCSV(
+	RegisterBulkCSV(
 		ctx context.Context,
 		fileheader *multipart.FileHeader,
 	) error
+	Fetch(ctx context.Context, id uint64) (types.User, error)
+	Delete(ctx context.Context, id uint64) error
 }
 
 type usecase struct {
@@ -43,7 +45,7 @@ func NewUserUsecase(
 	return &usecase{store, logger}
 }
 
-func (u *usecase) RegisterUser(
+func (u *usecase) Register(
 	ctx context.Context,
 	user *types.CreateUserParams,
 ) (types.User, error) {
@@ -61,7 +63,7 @@ func (u *usecase) RegisterUser(
 	}, nil
 }
 
-func (u *usecase) RegisterUserByCSV(
+func (u *usecase) RegisterBulkCSV(
 	ctx context.Context,
 	fileheader *multipart.FileHeader,
 ) error {
@@ -109,4 +111,16 @@ func (u *usecase) RegisterUserByCSV(
 		return err
 	}
 	return nil
+}
+
+func (u *usecase) Fetch(ctx context.Context, id uint64) (types.User, error) {
+	user, err := u.store.Get(ctx, id)
+	if err != nil {
+		return types.User{}, err
+	}
+	return user.DTO(), nil
+}
+
+func (u *usecase) Delete(ctx context.Context, id uint64) error {
+	return u.store.Delete(ctx, id)
 }
