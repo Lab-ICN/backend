@@ -24,7 +24,13 @@ func (p *postgresql) Create(ctx context.Context, user *types.CreateUserParams) (
         INSERT INTO users ("email", "username", "fullname", "is_member", "internship_start_date")
         VALUES (@email, @username, @fullname, @is_member, @internship_start_date)
         RETURNING id`,
-		pgx.NamedArgs{"email": user.Email, "username": user.Username, "fullname": user.Fullname, "is_member": user.IsMember, "internship_start_date": user.InternshipStartDate},
+		pgx.NamedArgs{
+			"email":                 user.Email,
+			"username":              user.Username,
+			"fullname":              user.Fullname,
+			"is_member":             user.IsMember,
+			"internship_start_date": user.InternshipStartDate,
+		},
 	).Scan(&id); err != nil {
 		return 0, err
 	}
