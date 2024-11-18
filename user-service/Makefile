@@ -16,7 +16,7 @@ GOOSE_MIGRATION_DIR=./migrations/
 GOOSE_DBSTRING=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
 
 http:
-	@go run cmd/api/main.go
+	@go run cmd/http/main.go
 
 devdb:
 	@docker run --name postgres --detach \
@@ -34,7 +34,7 @@ goose/status:
 	@goose status
 
 .PHONY:
-	run
+	http
 	devdb
 	test
 	goose/up
