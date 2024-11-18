@@ -22,12 +22,15 @@ import (
 	"github.com/spf13/viper"
 )
 
-func main() {
+func init() {
 	viper.SetConfigName("secret")
 	viper.AddConfigPath(".")
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Failed to read config file: %v\n", err)
 	}
+}
+
+func main() {
 	var cfg config.Config
 	if err := viper.Unmarshal(&cfg); err != nil {
 		log.Fatalf("Failed to parse config file: %v\n", err)
