@@ -1,7 +1,7 @@
 package config
 
 type Config struct {
-	host
+	host       `mapstructure:",squash"`
 	PostgreSQL postgreSQL
 	Logging    logging
 }
@@ -12,7 +12,7 @@ type host struct {
 }
 
 type postgreSQL struct {
-	host
+	host     `mapstructure:",squash"`
 	Username string
 	Password string
 	Database string

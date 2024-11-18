@@ -13,20 +13,33 @@ MIGRATION_DIR=
 .EXPORT_ALL_VARIABLES:
 GOOSE_DRIVER=postgres
 GOOSE_MIGRATION_DIR=./migrations/
-GOOSE_DBSTRING="postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}"
+GOOSE_DBSTRING=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
 
-http:
-	@go run cmd/api/main.go
+http/server:
+	@go run cmd/http/main.go
 
-db:
+devdb:
+	@docker run --name postgres --detach \
+		--publish ${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}:5432 \
+		--env POSTGRES_USER=${POSTGRESQL_USERNAME} \
+		--env POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD} \
+		postgres:17.1-alpine3.20
+
+test:
+	@go test -v -cover ./...
+
+test/k6:
+	@k6 run test/script.js
+
+goose/up:
 	@goose up
-db/status:
+
+goose/status:
 	@goose status
-db/migration:
-	@goose create ${x} sql
 
 .PHONY:
-	run
+	http/server
+	devdb
 	test
-	db/migration
+	goose/up
 
