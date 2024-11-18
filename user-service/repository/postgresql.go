@@ -110,16 +110,43 @@ func (p *postgresql) ListPassed(ctx context.Context, year uint) ([]User, error) 
 }
 
 func (p *postgresql) Get(ctx context.Context, id uint64) (User, error) {
-	rows, err := p.conn.Query(ctx, `SELECT * FROM users WHERE id = $1`, id)
+	rows, err := p.conn.Query(ctx, `
+		SELECT 
+			id,
+			email,
+			username,
+			fullname,
+			is_member,
+			internship_start_date
+		FROM users WHERE id = $1`, id)
 	if err != nil {
 		return User{}, err
 	}
 	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[User])
+	if err != nil {
+		return User{}, err
+	}
 	return user, nil
 }
 
 func (p *postgresql) GetByEmail(ctx context.Context, email string) (User, error) {
-	panic("unimplemented")
+	rows, err := p.conn.Query(ctx, `
+		SELECT 
+			id,
+			email,
+			username,
+			fullname,
+			is_member,
+			internship_start_date
+		FROM users WHERE email = $1`, email)
+	if err != nil {
+		return User{}, err
+	}
+	user, err := pgx.CollectExactlyOneRow(rows, pgx.RowToStructByName[User])
+	if err != nil {
+		return User{}, err
+	}
+	return user, nil
 }
 
 func (p *postgresql) Delete(ctx context.Context, id uint64) error {

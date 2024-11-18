@@ -96,7 +96,7 @@ func (u *usecase) RegisterBulkCSV(
 		} else {
 			users[i].IsMember = _bool
 		}
-		_time, err := time.Parse(time.DateTime, cols[colInternshipStartDate])
+		_time, err := time.Parse(time.RFC3339, cols[colInternshipStartDate])
 		if err != nil {
 			u.logger.Error("failed to parse string to time.Time",
 				zap.Error(err),

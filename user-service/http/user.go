@@ -29,8 +29,8 @@ func RegisterHandler(
 	h := Handler{usecase, validate, logger}
 	v1 := r.Group("/v1/users")
 	v1.Post("/", h.Post)
-	v1.Get("/:id<int\\>", h.Get)
-	v1.Get("/:id<int\\>", h.Delete)
+	v1.Get("/:id<int>", h.Get)
+	v1.Delete("/:id<int\\>", h.Delete)
 }
 
 func (h *Handler) Post(c *fiber.Ctx) error {
@@ -65,6 +65,7 @@ func (h *Handler) Get(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
+	h.logger.Debug("response", zap.Any("body", user))
 	return c.Status(http.StatusOK).JSON(user)
 }
 

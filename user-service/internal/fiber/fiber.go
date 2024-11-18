@@ -10,7 +10,7 @@ import (
 func New(cfg *config.Config) *fiber.App {
 	return fiber.New(fiber.Config{
 		AppName:      "acceptance-service",
-		ErrorHandler: errorHandler,
+		ErrorHandler: fiber.DefaultErrorHandler,
 		Prefork:      true,
 		RequestMethods: []string{
 			http.MethodHead,

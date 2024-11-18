@@ -32,6 +32,7 @@
           gopls
           gotools
           golangci-lint
+          k6
           mockgen
           nodePackages.sql-formatter
         ];

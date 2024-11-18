@@ -15,7 +15,7 @@ GOOSE_DRIVER=postgres
 GOOSE_MIGRATION_DIR=./migrations/
 GOOSE_DBSTRING=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
 
-http:
+http/server:
 	@go run cmd/http/main.go
 
 devdb:
@@ -28,13 +28,17 @@ devdb:
 test:
 	@go test -v -cover ./...
 
+test/k6:
+	@k6 run test/script.js
+
 goose/up:
 	@goose up
+
 goose/status:
 	@goose status
 
 .PHONY:
-	http
+	http/server
 	devdb
 	test
 	goose/up

@@ -42,15 +42,16 @@ func main() {
 		log.Fatalf("Failed to build logging instance: %v\n", err)
 	}
 	validate := validator.New()
-	r := _fiber.New(&cfg)
 	postgresql, err := postgresql.NewPool(ctx, &cfg)
 	if err != nil {
 		log.Fatalf("Failed to start postgresql connection pool: %v\n", err)
 	}
+	r := _fiber.New(&cfg)
+	api := r.Group("/api")
 
 	store := repository.NewUserPostgreSQL(postgresql)
 	usecase := usecase.NewUserUsecase(store, logging)
-	http.RegisterHandler(usecase, r, validate, logging)
+	http.RegisterHandler(usecase, api, validate, logging)
 
 	go func() {
 		if err := r.Listen(fmt.Sprintf("%s:%d", cfg.Address, cfg.Port)); err != nil {
