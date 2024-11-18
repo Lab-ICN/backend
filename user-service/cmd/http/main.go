@@ -63,8 +63,7 @@ func main() {
 	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	<-sig
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	go gracefulShutdown(timeoutCtx, cancel,
+	shutdownCtx := gracefulShutdown(ctx, 5*time.Second,
 		func(ctx context.Context) error {
 			return r.Shutdown()
 		},
@@ -76,8 +75,8 @@ func main() {
 			return logging.Sync()
 		},
 	)
-	<-timeoutCtx.Done()
-	if errors.Is(context.DeadlineExceeded, timeoutCtx.Err()) {
+	<-shutdownCtx.Done()
+	if errors.Is(context.DeadlineExceeded, shutdownCtx.Err()) {
 		log.Panicf("Shutdown timeout, force exit...")
 	}
 	log.Println("Gracefully shutdown...")
@@ -85,19 +84,23 @@ func main() {
 
 func gracefulShutdown(
 	ctx context.Context,
-	cancel context.CancelFunc,
+	timeout time.Duration,
 	tasks ...func(ctx context.Context) error,
-) {
-	defer cancel()
-	var wg sync.WaitGroup
-	for _, task := range tasks {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := task(ctx); err != nil {
-				log.Printf("Task failed: %v\n", err)
-			}
-		}()
-	}
-	wg.Wait()
+) context.Context {
+	_ctx, cancel := context.WithTimeout(ctx, timeout)
+	go func() {
+		var wg sync.WaitGroup
+		for _, task := range tasks {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				if err := task(ctx); err != nil {
+					log.Printf("Task failed: %v\n", err)
+				}
+			}()
+		}
+		wg.Wait()
+		cancel()
+	}()
+	return _ctx
 }
