@@ -2,6 +2,7 @@ package repository_test
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"os"
 	"testing"
@@ -12,7 +13,6 @@ import (
 	"github.com/Lab-ICN/backend/user-service/repository"
 	"github.com/Lab-ICN/backend/user-service/types"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -24,16 +24,15 @@ var (
 func TestMain(m *testing.M) {
 	ctx := context.Background()
 	var err error
-	viper.SetConfigName("secret")
-	viper.AddConfigPath("..")
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Failed to read config file: %v\n", err)
+	content, err := os.ReadFile(os.Getenv("CONFIG_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to open config file: %v\n", err)
 	}
-	var cfg config.Config
-	if err := viper.Unmarshal(&cfg); err != nil {
+	cfg := new(config.Config)
+	if err := json.Unmarshal(content, cfg); err != nil {
 		log.Fatalf("Failed to parse config file: %v\n", err)
 	}
-	conn, err = postgresql.NewPool(ctx, &cfg)
+	conn, err = postgresql.NewPool(ctx, cfg)
 	if err != nil {
 		log.Fatalf("Failed to start postgresql connection pool: %v\n", err)
 	}

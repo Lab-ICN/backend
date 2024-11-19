@@ -16,7 +16,10 @@ GOOSE_MIGRATION_DIR=./migrations/
 GOOSE_DBSTRING=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
 
 http/server:
-	@go run cmd/http/main.go
+	@CONFIG_FILE=secret.json go run cmd/http/main.go
+
+seeder:
+	@CONFIG_FILE=secret.json go run cmd/seed/main.go
 
 devdb:
 	@docker run --name postgres --detach \
