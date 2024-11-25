@@ -15,7 +15,7 @@ GOOSE_DRIVER=postgres
 GOOSE_MIGRATION_DIR=./migrations/
 GOOSE_DBSTRING=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}/${POSTGRESQL_DATABASE}
 
-http/server:
+httpserver:
 	@CONFIG_FILE=secret.json go run cmd/http/main.go
 
 seeder:
@@ -27,6 +27,9 @@ devdb:
 		--env POSTGRES_USER=${POSTGRESQL_USERNAME} \
 		--env POSTGRES_PASSWORD=${POSTGRESQL_PASSWORD} \
 		postgres:17.1-alpine3.20
+
+oci:
+	@docker build --tag user:1.0.0 .
 
 test:
 	@go test -v -cover ./...
@@ -40,9 +43,5 @@ goose/up:
 goose/status:
 	@goose status
 
-.PHONY:
-	http/server
-	devdb
-	test
-	goose/up
+.PHONY: http/server devdb test goose/up oci
 
