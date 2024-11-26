@@ -3,7 +3,10 @@ package usecase
 import (
 	"context"
 	"encoding/csv"
+	"errors"
+	"fmt"
 	"mime/multipart"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -51,7 +54,13 @@ func (u *usecase) Register(
 ) (types.User, error) {
 	id, err := u.store.Create(ctx, user)
 	if err != nil {
-		return types.User{}, err
+		if errors.Is(repository.ErrDuplicateRow, err) {
+			return types.User{}, &Error{
+				Code:    http.StatusConflict,
+				Message: msgUserExist,
+			}
+		}
+		return types.User{}, fmt.Errorf("register user: %w", err)
 	}
 	return types.User{
 		ID:                  id,
@@ -69,7 +78,7 @@ func (u *usecase) RegisterBulkCSV(
 ) error {
 	file, err := fileheader.Open()
 	if err != nil {
-		return err
+		return fmt.Errorf("open csv file header: %w", err)
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
@@ -79,7 +88,7 @@ func (u *usecase) RegisterBulkCSV(
 	r := csv.NewReader(file)
 	rows, err := r.ReadAll()
 	if err != nil {
-		return err
+		return fmt.Errorf("read csv file content: %w", err)
 	}
 	users := make([]types.CreateUserParams, len(rows))
 	for i, cols := range rows {
@@ -88,27 +97,27 @@ func (u *usecase) RegisterBulkCSV(
 		users[i].Fullname = cols[colFullname]
 		_bool, err := strconv.ParseBool(cols[colIsMember])
 		if err != nil {
-			u.logger.Error("failed to parse string to boolean",
-				zap.Error(err),
-				zap.Strings("row", cols),
-			)
-			users[i].IsMember = false
-		} else {
-			users[i].IsMember = _bool
+			return fmt.Errorf("parse value %s to boolean: %w", cols[colIsMember], err)
 		}
+		users[i].IsMember = _bool
 		_time, err := time.Parse(time.RFC3339, cols[colInternshipStartDate])
 		if err != nil {
-			u.logger.Error("failed to parse string to time.Time",
-				zap.Error(err),
-				zap.Strings("row", cols),
+			return fmt.Errorf(
+				"parse value %s to RFC3339: %w",
+				cols[colInternshipStartDate],
+				err,
 			)
-			users[i].InternshipStartDate = time.Time{}
-		} else {
-			users[i].InternshipStartDate = _time
 		}
+		users[i].InternshipStartDate = _time
 	}
 	if err := u.store.CreateBulk(ctx, users); err != nil {
-		return err
+		if errors.Is(repository.ErrDuplicateRow, err) {
+			return &Error{
+				Code:    http.StatusConflict,
+				Message: msgUserExist,
+			}
+		}
+		return fmt.Errorf("register user: %w", err)
 	}
 	return nil
 }
@@ -116,7 +125,13 @@ func (u *usecase) RegisterBulkCSV(
 func (u *usecase) Fetch(ctx context.Context, id uint64) (types.User, error) {
 	user, err := u.store.Get(ctx, id)
 	if err != nil {
-		return types.User{}, err
+		if errors.Is(repository.ErrNoRow, err) {
+			return types.User{}, &Error{
+				Code:    http.StatusNotFound,
+				Message: msgUserNotFound,
+			}
+		}
+		return types.User{}, fmt.Errorf("fetch user by id: %w", err)
 	}
 	return user.DTO(), nil
 }
