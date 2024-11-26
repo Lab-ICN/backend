@@ -18,8 +18,8 @@ GOOSE_DBSTRING=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGR
 httpserver:
 	@CONFIG_FILE=secret.json go run cmd/http/main.go
 
-seeder:
-	@CONFIG_FILE=secret.json go run cmd/seed/main.go
+seed:
+	@CONFIG_FILE=secret.json go run cmd/seed/main.go Users
 
 devdb:
 	@docker run --name postgres --detach \
@@ -43,5 +43,5 @@ goose/up:
 goose/status:
 	@goose status
 
-.PHONY: http/server devdb test goose/up oci
+.PHONY: http/server devdb seed test goose/up oci
 
