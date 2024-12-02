@@ -2,30 +2,27 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"log"
+	"os"
 
 	"github.com/Lab-ICN/backend/user-service/internal/config"
 	"github.com/Lab-ICN/backend/user-service/internal/postgresql"
 	"github.com/Lab-ICN/backend/user-service/internal/seed"
-	"github.com/spf13/viper"
 )
 
-func init() {
-	viper.SetConfigName("secret")
-	viper.AddConfigPath(".")
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Failed to read config file: %v\n", err)
-	}
-}
-
 func main() {
-	var cfg config.Config
-	if err := viper.Unmarshal(&cfg); err != nil {
+	content, err := os.ReadFile(os.Getenv("CONFIG_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to open config file: %v\n", err)
+	}
+	cfg := new(config.Config)
+	if err := json.Unmarshal(content, cfg); err != nil {
 		log.Fatalf("Failed to parse config file: %v\n", err)
 	}
 	ctx := context.Background()
-	postgresql, err := postgresql.NewConn(ctx, &cfg)
+	postgresql, err := postgresql.NewConn(ctx, cfg)
 	if err != nil {
 		log.Fatalf("Failed to start postgresql connection pool: %v\n", err)
 	}

@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"path/filepath"
 
 	"github.com/Lab-ICN/backend/user-service/types"
 	"github.com/Lab-ICN/backend/user-service/usecase"
@@ -39,10 +40,16 @@ func (h *Handler) Post(c *fiber.Ctx) error {
 		if err != nil {
 			return err
 		}
+		if filepath.Ext(filehead.Filename) != ".csv" {
+			return &usecase.Error{
+				Code:    http.StatusUnprocessableEntity,
+				Message: msgMustCSV,
+			}
+		}
 		if err := h.usecase.RegisterBulkCSV(c.Context(), filehead); err != nil {
 			return err
 		}
-		c.SendStatus(http.StatusCreated)
+		return c.SendStatus(http.StatusCreated)
 	}
 	payload := new(types.CreateUserParams)
 	if err := c.BodyParser(payload); err != nil {
@@ -65,7 +72,6 @@ func (h *Handler) Get(c *fiber.Ctx) error {
 	if err != nil {
 		return err
 	}
-	h.logger.Debug("response", zap.Any("body", user))
 	return c.Status(http.StatusOK).JSON(user)
 }
 

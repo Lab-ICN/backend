@@ -1,0 +1,18 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: cnpgcluster-web
+spec:
+  instances: 3
+  primaryUpdateStrategy: unsupervised
+  superuserSecret:
+    name: cnpgcluster-web-super
+  bootstrap:
+    initdb:
+      database: web
+      owner: web
+      secret:
+        name: cnpgcluster-web
+  storage:
+    size: 10Gi

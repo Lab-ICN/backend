@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
@@ -19,39 +20,40 @@ import (
 	"github.com/Lab-ICN/backend/user-service/repository"
 	"github.com/Lab-ICN/backend/user-service/usecase"
 	"github.com/go-playground/validator/v10"
-	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
-func init() {
-	viper.SetConfigName("secret")
-	viper.AddConfigPath(".")
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Failed to read config file: %v\n", err)
-	}
-}
-
 func main() {
-	var cfg config.Config
-	if err := viper.Unmarshal(&cfg); err != nil {
+	content, err := os.ReadFile(os.Getenv("CONFIG_FILE"))
+	if err != nil {
+		log.Fatalf("Failed to open config file: %v\n", err)
+	}
+	cfg := new(config.Config)
+	if err := json.Unmarshal(content, cfg); err != nil {
 		log.Fatalf("Failed to parse config file: %v\n", err)
 	}
 	ctx := context.Background()
 
-	logging, err := logging.New(&cfg)
+	logger := new(zap.Logger)
+	if cfg.Development {
+		logger, err = logging.NewDevelopment()
+	} else {
+		logger, err = logging.NewProduction()
+	}
 	if err != nil {
 		log.Fatalf("Failed to build logging instance: %v\n", err)
 	}
 	validate := validator.New()
-	postgresql, err := postgresql.NewPool(ctx, &cfg)
+	postgresql, err := postgresql.NewPool(ctx, cfg)
 	if err != nil {
 		log.Fatalf("Failed to start postgresql connection pool: %v\n", err)
 	}
-	r := _fiber.New(&cfg)
+	r := _fiber.New(cfg, logger)
 	api := r.Group("/api")
 
 	store := repository.NewUserPostgreSQL(postgresql)
-	usecase := usecase.NewUserUsecase(store, logging)
-	http.RegisterHandler(usecase, api, validate, logging)
+	usecase := usecase.NewUserUsecase(store, logger)
+	http.RegisterHandler(usecase, api, validate, logger)
 
 	go func() {
 		if err := r.Listen(fmt.Sprintf("%s:%d", cfg.Address, cfg.Port)); err != nil {
@@ -72,7 +74,7 @@ func main() {
 			return nil
 		},
 		func(ctx context.Context) error {
-			return logging.Sync()
+			return logger.Sync()
 		},
 	)
 	<-shutdownCtx.Done()
