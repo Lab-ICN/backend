@@ -18,9 +18,6 @@ GOOSE_DBSTRING=postgres://${POSTGRESQL_USERNAME}:${POSTGRESQL_PASSWORD}@${POSTGR
 httpserver:
 	@CONFIG_FILE=secret.json go run cmd/http/main.go
 
-seed:
-	@CONFIG_FILE=secret.json go run cmd/seed/main.go Users
-
 devdb:
 	@docker run --name postgres --detach \
 		--publish ${POSTGRESQL_ADDRESS}:${POSTGRESQL_PORT}:5432 \

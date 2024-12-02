@@ -32,6 +32,7 @@
           gopls
           gotools
           golangci-lint
+          go-swag
           k6
           mockgen
           nodePackages.sql-formatter
