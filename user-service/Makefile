@@ -43,5 +43,5 @@ goose/up:
 goose/status:
 	@goose status
 
-.PHONY: http/server devdb seed test goose/up oci
+.PHONY: httpserver seed devdb oci test test/k6 goose/up goose/status
 
