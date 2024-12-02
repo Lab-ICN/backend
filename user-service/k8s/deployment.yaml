@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
         - name: user
-          image: mirzaahilmi/user:1.0.1
+          image: mirzaahilmi/user:1.0.2
           ports:
             - name: user
               containerPort: 1025

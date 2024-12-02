@@ -8,7 +8,7 @@ spec:
   selector:
     app: user
   ports:
-    - name: default
+    - name: v1
       protocol: TCP
       port: 1025
       targetPort: user
