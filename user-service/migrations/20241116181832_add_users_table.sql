@@ -3,6 +3,7 @@
 CREATE TABLE users (
   "id" BIGSERIAL PRIMARY KEY,
   "email" TEXT UNIQUE NOT NULL,
+  "refresh_token" TEXT,
   "username" TEXT UNIQUE NOT NULL,
   "fullname" TEXT NOT NULL,
   "is_member" BOOLEAN NOT NULL,
