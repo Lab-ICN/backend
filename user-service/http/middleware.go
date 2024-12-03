@@ -48,20 +48,20 @@ func BearerAuth(key string) func(c *fiber.Ctx) error {
 
 func ApiKeyAuth(key string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
-		header := c.Get(fiber.HeaderAuthorization)
+		header := c.Get(fiber.HeaderAuthorization, "")
 		if header == "" {
-			return usecase.Error{Code: http.StatusUnauthorized}
+			return &usecase.Error{Code: http.StatusUnauthorized}
 		}
 		sent, err := base64.StdEncoding.DecodeString(header)
 		if err != nil {
-			return usecase.Error{Code: http.StatusBadRequest}
+			return &usecase.Error{Code: http.StatusBadRequest}
 		}
 		actual, err := base64.StdEncoding.DecodeString(key)
 		if err != nil {
-			return usecase.Error{Code: http.StatusBadRequest}
+			return &usecase.Error{Code: http.StatusBadRequest}
 		}
 		if !bytes.Equal(sent, actual) {
-			return usecase.Error{Code: http.StatusUnauthorized}
+			return &usecase.Error{Code: http.StatusUnauthorized}
 		}
 		return c.Next()
 	}
