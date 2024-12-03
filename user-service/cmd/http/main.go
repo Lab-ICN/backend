@@ -20,6 +20,7 @@ import (
 	"github.com/Lab-ICN/backend/user-service/repository"
 	"github.com/Lab-ICN/backend/user-service/usecase"
 	"github.com/go-playground/validator/v10"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"go.uber.org/zap"
 )
 
@@ -49,11 +50,12 @@ func main() {
 		log.Fatalf("Failed to start postgresql connection pool: %v\n", err)
 	}
 	r := _fiber.New(cfg, logger)
+	r.Use(cors.New())
 	api := r.Group("/api")
 
 	store := repository.NewUserPostgreSQL(postgresql)
 	usecase := usecase.NewUserUsecase(store, logger)
-	http.RegisterHandler(usecase, api, validate, logger)
+	http.RegisterHandlers(usecase, cfg, api, validate, logger)
 
 	go func() {
 		if err := r.Listen(fmt.Sprintf("%s:%d", cfg.Address, cfg.Port)); err != nil {
