@@ -22,7 +22,7 @@ func BearerAuth(key string) func(c *fiber.Ctx) error {
 		authorization := c.Get(fiber.HeaderAuthorization)
 		bearer := strings.SplitN(authorization, " ", 2)
 		if bearer[0] != "Bearer" || len(bearer) != 2 {
-			return usecase.Error{
+			return &usecase.Error{
 				Code:    http.StatusBadRequest,
 				Message: msgInvalidBearer,
 			}
@@ -31,11 +31,11 @@ func BearerAuth(key string) func(c *fiber.Ctx) error {
 			return []byte(key), nil
 		})
 		if !token.Valid {
-			return usecase.Error{Code: http.StatusUnauthorized}
+			return &usecase.Error{Code: http.StatusUnauthorized}
 		}
 		sub, err := token.Claims.GetSubject()
 		if err != nil {
-			return usecase.Error{Code: http.StatusBadRequest, Message: msgMissingSub}
+			return &usecase.Error{Code: http.StatusBadRequest, Message: msgMissingSub}
 		}
 		id, err := strconv.ParseUint(sub, 10, 64)
 		if err != nil {

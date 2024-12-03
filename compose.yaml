@@ -1,3 +1,5 @@
+name: lab-icn-web
+
 volumes:
   postgresql-data:
     driver: local
@@ -43,6 +45,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.user-service.rule=PathPrefix(`/api/v1/users`)"
       - "traefik.http.routers.user-service.entrypoints=web"
+      - "traefik.docker.network=lab-icn-web_traefik-network"
 
   token-service:
     build: 
@@ -64,6 +67,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.token-service.rule=PathPrefix(`/api/v1/tokens`)"
       - "traefik.http.routers.token-service.entrypoints=web"
+      - "traefik.docker.network=lab-icn-web_traefik-network"
 
   postgresql:
     image: postgres:17.2-alpine3.20

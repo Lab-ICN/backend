@@ -66,9 +66,10 @@ func (h *Handler) Post(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Get(c *fiber.Ctx) error {
+	h.logger.Debug("debug")
 	id, ok := c.Locals(keyClientID).(uint64)
 	if !ok {
-		return usecase.Error{Code: http.StatusInternalServerError}
+		return &usecase.Error{Code: http.StatusInternalServerError}
 	}
 	user, err := h.usecase.Fetch(c.Context(), id)
 	if err != nil {

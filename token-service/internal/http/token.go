@@ -40,7 +40,7 @@ func (h *Handler) GenerateHandler(c *fiber.Ctx) error {
 		Token string `json:"token"`
 	})
 	if err := c.BodyParser(payload); err != nil {
-		return usecase.Error{Code: fiber.StatusBadRequest}
+		return &usecase.Error{Code: fiber.StatusBadRequest}
 	}
 	claims, err := idtoken.Validate(c.Context(), payload.Token, h.cfg.GoogleClientID)
 	if err != nil {
@@ -61,7 +61,7 @@ func (h *Handler) RefreshHandler(c *fiber.Ctx) error {
 		Token string `json:"refreshToken"`
 	})
 	if err := c.BodyParser(payload); err != nil {
-		return usecase.Error{Code: fiber.StatusBadRequest}
+		return &usecase.Error{Code: fiber.StatusBadRequest}
 	}
 	token, err := _jwt.Validate(payload.Token, h.cfg.JWT.Key)
 	if err != nil {
@@ -86,7 +86,7 @@ func (h *Handler) RefreshHandler(c *fiber.Ctx) error {
 func (h *Handler) InvalidateHandler(c *fiber.Ctx) error {
 	id, ok := c.Locals(keyClientID).(uint64)
 	if !ok {
-		return usecase.Error{Code: http.StatusInternalServerError}
+		return &usecase.Error{Code: http.StatusInternalServerError}
 	}
 	if err := h.usecase.Invalidate(c.Context(), id); err != nil {
 		return err
