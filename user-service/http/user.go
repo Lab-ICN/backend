@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"github.com/Lab-ICN/backend/user-service/internal/config"
 	"github.com/Lab-ICN/backend/user-service/types"
@@ -37,7 +38,7 @@ func RegisterHandlers(
 }
 
 func (h *Handler) Post(c *fiber.Ctx) error {
-	if c.Get(fiber.HeaderContentType) == fiber.MIMEMultipartForm {
+	if strings.Contains(c.Get(fiber.HeaderContentType), fiber.MIMEMultipartForm) {
 		filehead, err := c.FormFile(keyFile)
 		if err != nil {
 			return err
