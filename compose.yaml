@@ -1,0 +1,70 @@
+volumes:
+  postgresql-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+  traefik-network:
+    driver: bridge
+
+services:
+  traefik:
+    image: traefik:v2.11
+    command:
+      - "--providers.docker=true"
+    ports:
+      - "3000:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - traefik-network
+    restart: unless-stopped
+
+  user-service:
+    build: 
+      context: ./user-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      CONFIG_FILE: /run/.secret.json
+    volumes:
+      - ./user-service/secret.json:/run/.secret.json
+    networks:
+      - app-network
+      - traefik-network
+    depends_on:
+      - postgresql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user-service.rule=PathPrefix(`/api/v1/users`)"
+
+  token-service:
+    build: 
+      context: ./token-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      CONFIG_FILE: /run/.secret.json
+    volumes:
+      - ./user-service/secret.json:/run/.secret.json
+    networks:
+      - app-network
+      - traefik-network
+    depends_on:
+      - postgresql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.token-service.rule=PathPrefix(`/api/v1/tokens`)"
+
+  postgresql:
+    image: postgres:17.2-alpine3.20
+    env_file: .env
+    environment:
+      postgresql_USER: ${POSTGRES_USER}
+      postgresql_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - app-network
