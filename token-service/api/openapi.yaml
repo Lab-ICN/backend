@@ -1,0 +1,90 @@
+openapi: 3.0.3
+info:
+  title: Token Service API
+  description: API for managing user tokens, including generation, refresh, and invalidation.
+  version: 1.0.0
+servers:
+  - url: http://{{ DOMAIN }}/api/v1/tokens
+    description: Development server
+
+paths:
+  /:
+    post:
+      summary: Generate tokens
+      description: Generates access and refresh tokens based on a provided Google ID token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: Google ID token
+              required:
+                - token
+      responses:
+        '200':
+          description: Tokens generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refreshToken:
+                    type: string
+                  accessToken:
+                    type: string
+        '400':
+          description: Bad request - Invalid or missing input
+        '401':
+          description: Unauthorized - Invalid Google ID token
+
+  /self:
+    put:
+      summary: Refresh access token
+      description: Refreshes the access token using a valid refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: The refresh token
+              required:
+                - refreshToken
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '400':
+          description: Bad request - Invalid or missing input
+        '401':
+          description: Unauthorized - Invalid refresh token
+
+    delete:
+      summary: Invalidate tokens
+      description: Invalidates the user's tokens to log them out.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tokens invalidated successfully
+        '401':
+          description: Unauthorized - Missing or invalid access token
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
