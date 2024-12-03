@@ -13,6 +13,8 @@ services:
     image: traefik:v2.11
     command:
       - "--providers.docker=true"
+      - "--entryPoints.web.address=:80"
+      - "--providers.docker.exposedByDefault=false"
     ports:
       - "3000:80"
     volumes:
@@ -26,6 +28,8 @@ services:
       context: ./user-service
       dockerfile: Dockerfile
     restart: unless-stopped
+    expose:
+      - 80
     environment:
       CONFIG_FILE: /run/.secret.json
     volumes:
@@ -38,12 +42,15 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.user-service.rule=PathPrefix(`/api/v1/users`)"
+      - "traefik.http.routers.user-service.entrypoints=web"
 
   token-service:
     build: 
       context: ./token-service
       dockerfile: Dockerfile
     restart: unless-stopped
+    expose:
+      - 80
     environment:
       CONFIG_FILE: /run/.secret.json
     volumes:
@@ -56,6 +63,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.token-service.rule=PathPrefix(`/api/v1/tokens`)"
+      - "traefik.http.routers.token-service.entrypoints=web"
 
   postgresql:
     image: postgres:17.2-alpine3.20
