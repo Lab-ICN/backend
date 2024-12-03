@@ -1,9 +1,11 @@
 package config
 
 type Config struct {
+	PostgreSQL  postgreSQL
+	JwtKey      string
+	ApiKey      string
 	host        `mapstructure:",squash"`
 	Development bool
-	PostgreSQL  postgreSQL
 }
 
 type host struct {
@@ -12,8 +14,8 @@ type host struct {
 }
 
 type postgreSQL struct {
-	host     `mapstructure:",squash"`
 	Username string
 	Password string
 	Database string
+	host     `mapstructure:",squash"`
 }

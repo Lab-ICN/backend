@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/Lab-ICN/backend/user-service/internal/config"
 	"github.com/Lab-ICN/backend/user-service/types"
 	"github.com/Lab-ICN/backend/user-service/usecase"
 	"github.com/go-playground/validator/v10"
@@ -21,17 +22,18 @@ type Handler struct {
 	logger   *zap.Logger
 }
 
-func RegisterHandler(
+func RegisterHandlers(
 	usecase usecase.IUserUsecase,
+	cfg *config.Config,
 	r fiber.Router,
 	validate *validator.Validate,
 	logger *zap.Logger,
 ) {
 	h := Handler{usecase, validate, logger}
 	v1 := r.Group("/v1/users")
-	v1.Post("/", h.Post)
-	v1.Get("/:id<int>", h.Get)
-	v1.Delete("/:id<int\\>", h.Delete)
+	v1.Get("/self", BearerAuth(cfg.JwtKey), h.Get)
+	v1.Post("/", ApiKeyAuth(cfg.ApiKey), h.Post)
+	v1.Delete("/:id<int>", ApiKeyAuth(cfg.ApiKey), h.Delete)
 }
 
 func (h *Handler) Post(c *fiber.Ctx) error {
@@ -63,11 +65,10 @@ func (h *Handler) Post(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Get(c *fiber.Ctx) error {
-	_id, err := c.ParamsInt("id")
-	if err != nil {
-		return err
+	id, ok := c.Locals(keyClientID).(uint64)
+	if !ok {
+		return usecase.Error{Code: http.StatusInternalServerError}
 	}
-	id := uint64(_id)
 	user, err := h.usecase.Fetch(c.Context(), id)
 	if err != nil {
 		return err
