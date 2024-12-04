@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -44,7 +45,7 @@ func (h *Handler) GenerateHandler(c *fiber.Ctx) error {
 	}
 	claims, err := idtoken.Validate(c.Context(), payload.Token, h.cfg.GoogleClientID)
 	if err != nil {
-		return err
+		return &usecase.Error{Code: http.StatusUnauthorized, Err: err}
 	}
 	refresh, access, err := h.usecase.Generate(c.Context(), claims.Claims["email"].(string))
 	if err != nil {
@@ -69,13 +70,12 @@ func (h *Handler) RefreshHandler(c *fiber.Ctx) error {
 	}
 	sub, err := token.Claims.GetSubject()
 	if err != nil {
-		return err
+		return fmt.Errorf("getting jwt token subject: %w")
 	}
 	id, err := strconv.ParseUint(sub, 10, 64)
 	if err != nil {
-		return err
+		return fmt.Errorf("parsing jwt subject of %s to uint64: %w", id, err)
 	}
-	h.logger.Debug("debug", zap.Uint64p("val", &id))
 	access, err := h.usecase.Refresh(c.Context(), id)
 	if err != nil {
 		return err

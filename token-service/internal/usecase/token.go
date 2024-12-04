@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/Lab-ICN/backend/token-service/internal/config"
@@ -40,8 +41,7 @@ func (u *usecase) Generate(ctx context.Context, email string) (string, string, e
 		}
 		return "", "", fmt.Errorf("fetch user id by email of %s: %w", email, err)
 	}
-
-	accessToken := jwt.NewWithClaims(
+	access := jwt.NewWithClaims(
 		jwt.SigningMethodHS512,
 		jwt.RegisteredClaims{
 			Subject: fmt.Sprint(id),
@@ -50,8 +50,7 @@ func (u *usecase) Generate(ctx context.Context, email string) (string, string, e
 				Add(time.Duration(u.cfg.JWT.AccessTTL) * time.Minute)),
 		},
 	)
-
-	refreshToken := jwt.NewWithClaims(
+	refresh := jwt.NewWithClaims(
 		jwt.SigningMethodHS512,
 		jwt.RegisteredClaims{
 			Subject: fmt.Sprint(id),
@@ -62,29 +61,27 @@ func (u *usecase) Generate(ctx context.Context, email string) (string, string, e
 			),
 		},
 	)
-
-	signedRefreshToken, err := refreshToken.SignedString([]byte(u.cfg.JWT.Key))
+	refreshToken, err := refresh.SignedString([]byte(u.cfg.JWT.Key))
 	if err != nil {
+		return "", "", fmt.Errorf("signing refresh token: %w", err)
+	}
+	accessToken, err := access.SignedString([]byte(u.cfg.JWT.Key))
+	if err != nil {
+		return "", "", fmt.Errorf("signing access token: %w", err)
+	}
+	if err = u.store.CreateRefreshToken(ctx, email, refreshToken); err != nil {
 		return "", "", err
 	}
-
-	signedAccessToken, err := accessToken.SignedString([]byte(u.cfg.JWT.Key))
-	if err != nil {
-		return "", "", err
-	}
-
-	err = u.store.CreateRefreshToken(ctx, email, signedRefreshToken)
-	if err != nil {
-		return "", "", err
-	}
-
-	return signedAccessToken, signedRefreshToken, nil
+	return accessToken, refreshToken, nil
 }
 
 func (u *usecase) Refresh(ctx context.Context, id uint64) (string, error) {
 	refreshToken, err := u.store.GetRefreshTokenByID(ctx, id)
 	if err != nil {
-		return "", err
+		if errors.Is(err, repository.ErrNoRow) {
+			return "", Error{Code: http.StatusUnauthorized}
+		}
+		return "", fmt.Errorf("fetching refresh token: %w", err)
 	}
 
 	token, err := jwt.Parse(refreshToken, func(t *jwt.Token) (interface{}, error) {
@@ -94,17 +91,26 @@ func (u *usecase) Refresh(ctx context.Context, id uint64) (string, error) {
 		if errors.Is(err, jwt.ErrTokenExpired) {
 			err = u.store.DeleteRefreshToken(ctx, id)
 			if err != err {
-				return "", err
+				return "", fmt.Errorf("deleting refresh token: %w", err)
 			}
 		}
-		return "", err
+		return "", fmt.Errorf("parsing jwt token: %w", err)
 	}
-
 	if !token.Valid {
-		return "", fmt.Errorf("error token invalid")
+		return "", Error{Code: http.StatusUnauthorized}
 	}
-
-	accessToken := jwt.NewWithClaims(
+	sub, err := token.Claims.GetSubject()
+	if err != nil {
+		return "", fmt.Errorf("getting jwt token subject: %w")
+	}
+	tokenID, err := strconv.ParseUint(sub, 10, 64)
+	if err != nil {
+		return "", fmt.Errorf("parsing jwt subject of %s to uint64: %w", tokenID, err)
+	}
+	if id != tokenID {
+		return "", Error{Code: http.StatusUnauthorized}
+	}
+	access := jwt.NewWithClaims(
 		jwt.SigningMethodHS512,
 		jwt.RegisteredClaims{
 			Subject: fmt.Sprint(id),
@@ -113,13 +119,11 @@ func (u *usecase) Refresh(ctx context.Context, id uint64) (string, error) {
 				Add(time.Duration(u.cfg.JWT.AccessTTL) * time.Minute)),
 		},
 	)
-
-	signedAccessToken, err := accessToken.SignedString([]byte(u.cfg.JWT.Key))
+	accessToken, err := access.SignedString([]byte(u.cfg.JWT.Key))
 	if err != nil {
 		return "", err
 	}
-
-	return signedAccessToken, nil
+	return accessToken, nil
 }
 
 func (u *usecase) Invalidate(ctx context.Context, id uint64) error {
