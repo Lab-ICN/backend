@@ -29,6 +29,10 @@ func New(cfg *config.Config, logger *zap.Logger) *fiber.App {
 func NewErrorHandler(logger *zap.Logger) func(c *fiber.Ctx, err error) error {
 	return func(c *fiber.Ctx, err error) error {
 		logger.Error("error occured", zap.Error(err))
+		fiberErr := new(fiber.Error)
+		if errors.As(err, &fiberErr) {
+			return c.SendStatus(fiberErr.Code)
+		}
 		uscErr := new(usecase.Error)
 		if errors.As(err, &uscErr) {
 			return c.Status(uscErr.Code).JSON(uscErr)
