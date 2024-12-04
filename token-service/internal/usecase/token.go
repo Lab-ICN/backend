@@ -41,6 +41,18 @@ func (u *usecase) Generate(ctx context.Context, email string) (string, string, e
 		}
 		return "", "", fmt.Errorf("fetch user id by email of %s: %w", email, err)
 	}
+	refresh := jwt.NewWithClaims(
+		jwt.SigningMethodHS512,
+		jwt.RegisteredClaims{
+			Subject:  fmt.Sprint(id),
+			IssuedAt: jwt.NewNumericDate(time.Now()),
+			ExpiresAt: jwt.NewNumericDate(
+				time.Now().
+					UTC().
+					Add(time.Duration(u.cfg.JWT.RefreshTTL) * time.Minute),
+			),
+		},
+	)
 	access := jwt.NewWithClaims(
 		jwt.SigningMethodHS512,
 		jwt.RegisteredClaims{
@@ -48,17 +60,6 @@ func (u *usecase) Generate(ctx context.Context, email string) (string, string, e
 			ExpiresAt: jwt.NewNumericDate(time.Now().
 				UTC().
 				Add(time.Duration(u.cfg.JWT.AccessTTL) * time.Minute)),
-		},
-	)
-	refresh := jwt.NewWithClaims(
-		jwt.SigningMethodHS512,
-		jwt.RegisteredClaims{
-			Subject: fmt.Sprint(id),
-			ExpiresAt: jwt.NewNumericDate(
-				time.Now().
-					UTC().
-					Add(time.Duration(u.cfg.JWT.RefreshTTL) * time.Minute),
-			),
 		},
 	)
 	refreshToken, err := refresh.SignedString([]byte(u.cfg.JWT.Key))
@@ -72,7 +73,7 @@ func (u *usecase) Generate(ctx context.Context, email string) (string, string, e
 	if err = u.store.CreateRefreshToken(ctx, email, refreshToken); err != nil {
 		return "", "", err
 	}
-	return accessToken, refreshToken, nil
+	return refreshToken, accessToken, nil
 }
 
 func (u *usecase) Refresh(ctx context.Context, id uint64) (string, error) {

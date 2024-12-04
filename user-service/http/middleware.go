@@ -29,7 +29,7 @@ func BearerAuth(key string) func(c *fiber.Ctx) error {
 		}
 		token, err := jwt.Parse(bearer[1], func(token *jwt.Token) (interface{}, error) {
 			return []byte(key), nil
-		})
+		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 		if err != nil {
 			return &usecase.Error{Code: http.StatusUnauthorized, Err: err}
 		}
