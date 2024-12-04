@@ -1,0 +1,205 @@
+openapi: 3.1.0
+info:
+  title: ICN Laboratory Web API
+  version: 1.0.0
+servers:
+  - url: http://localhost/api/v1
+    description: API Version 1
+
+paths:
+  /users/self:
+    get:
+      summary: Get the authenticated user's details
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: Unauthorized access
+
+  /users:
+    post:
+      summary: Create a new user or upload a bulk CSV
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserParams'
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                attachment:
+                  type: string
+                  format: binary
+              required:
+                - attachment
+        required: true
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '422':
+          description: Unprocessable Entity - Invalid file format or payload
+
+  /users/{id}:
+    delete:
+      summary: Delete a user by ID
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: ID of the user to delete
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: User deleted successfully
+        '404':
+          description: User not found
+  /tokens:
+    post:
+      summary: Generate tokens
+      description: Generates access and refresh tokens based on a provided Google ID token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token:
+                  type: string
+                  description: Google ID token
+              required:
+                - token
+      responses:
+        '200':
+          description: Tokens generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  refreshToken:
+                    type: string
+                  accessToken:
+                    type: string
+        '400':
+          description: Bad request - Invalid or missing input
+        '401':
+          description: Unauthorized - Invalid Google ID token
+
+  /tokens/self:
+    put:
+      summary: Refresh access token
+      description: Refreshes the access token using a valid refresh token.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: The refresh token
+              required:
+                - refreshToken
+      responses:
+        '200':
+          description: Access token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '400':
+          description: Bad request - Invalid or missing input
+        '401':
+          description: Unauthorized - Invalid refresh token
+
+    delete:
+      summary: Invalidate tokens
+      description: Invalidates the user's tokens to log them out.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Tokens invalidated successfully
+        '401':
+          description: Unauthorized - Missing or invalid access token
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        fullname:
+          type: string
+        isMember:
+          type: boolean
+        internshipStartDate:
+          type: string
+          format: date-time
+      required:
+        - id
+        - email
+        - username
+        - fullname
+        - isMember
+        - internshipStartDate
+
+    CreateUserParams:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        fullname:
+          type: string
+        isMember:
+          type: boolean
+        internshipStartDate:
+          type: string
+          format: date-time
+      required:
+        - email
+        - username
+        - fullname
+        - isMember
+        - internshipStartDate
