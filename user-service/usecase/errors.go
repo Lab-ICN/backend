@@ -3,6 +3,7 @@ package usecase
 type Error struct {
 	Code    int           `json:"-"`
 	Message string        `json:"message"`
+	Err     error         `json:"-"`
 	Errors  []DomainError `json:"errors"`
 }
 
