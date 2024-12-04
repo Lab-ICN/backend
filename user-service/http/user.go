@@ -41,7 +41,11 @@ func (h *Handler) Post(c *fiber.Ctx) error {
 	if strings.Contains(c.Get(fiber.HeaderContentType), fiber.MIMEMultipartForm) {
 		filehead, err := c.FormFile(keyFile)
 		if err != nil {
-			return err
+			return &usecase.Error{
+				Code:    http.StatusBadRequest,
+				Message: msgMissingAttachment,
+				Err:     err,
+			}
 		}
 		if filepath.Ext(filehead.Filename) != ".csv" {
 			return &usecase.Error{
@@ -56,7 +60,10 @@ func (h *Handler) Post(c *fiber.Ctx) error {
 	}
 	payload := new(types.CreateUserParams)
 	if err := c.BodyParser(payload); err != nil {
-		return err
+		return &usecase.Error{
+			Code: http.StatusBadRequest,
+			Err:  err,
+		}
 	}
 	user, err := h.usecase.Register(c.Context(), payload)
 	if err != nil {
@@ -66,7 +73,6 @@ func (h *Handler) Post(c *fiber.Ctx) error {
 }
 
 func (h *Handler) Get(c *fiber.Ctx) error {
-	h.logger.Debug("debug")
 	id, ok := c.Locals(keyClientID).(uint64)
 	if !ok {
 		return &usecase.Error{Code: http.StatusInternalServerError}

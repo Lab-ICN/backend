@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -27,6 +28,9 @@ func BearerAuth(key string) func(c *fiber.Ctx) error {
 		token, err := jwt.Parse(bearer[1], func(token *jwt.Token) (interface{}, error) {
 			return []byte(key), nil
 		})
+		if err != nil {
+			return &usecase.Error{Code: http.StatusUnauthorized, Err: err}
+		}
 		if !token.Valid {
 			return &usecase.Error{Code: http.StatusUnauthorized}
 		}
@@ -36,7 +40,7 @@ func BearerAuth(key string) func(c *fiber.Ctx) error {
 		}
 		id, err := strconv.ParseUint(sub, 10, 64)
 		if err != nil {
-			return err
+			return fmt.Errorf("parsing jwt sub of %s: %w", sub, err)
 		}
 		c.Locals(keyClientID, id)
 		return c.Next()
