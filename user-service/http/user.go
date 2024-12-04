@@ -1,6 +1,8 @@
 package http
 
 import (
+	"errors"
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -75,7 +77,7 @@ func (h *Handler) Post(c *fiber.Ctx) error {
 func (h *Handler) Get(c *fiber.Ctx) error {
 	id, ok := c.Locals(keyClientID).(uint64)
 	if !ok {
-		return &usecase.Error{Code: http.StatusInternalServerError}
+		return fmt.Errorf("assert string of %s to uint64", c.Locals(keyClientID))
 	}
 	user, err := h.usecase.Fetch(c.Context(), id)
 	if err != nil {
@@ -87,7 +89,7 @@ func (h *Handler) Get(c *fiber.Ctx) error {
 func (h *Handler) Delete(c *fiber.Ctx) error {
 	_id, err := c.ParamsInt("id")
 	if err != nil {
-		return err
+		return &usecase.Error{Code: http.StatusUnprocessableEntity}
 	}
 	id := uint64(_id)
 	if err := h.usecase.Delete(c.Context(), id); err != nil {
