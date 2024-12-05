@@ -32,14 +32,6 @@ services:
     restart: unless-stopped
     expose:
       - 3000
-    env_file: .env
-    environment:
-      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST}
-      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID}
-      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET}
-      NEXT_AUTH_SECRET: ${NEXT_AUTH_SECRET}
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
-      NEXT_PUBLIC_WHATSAPP_GROUP: ${NEXT_PUBLIC_WHATSAPP_GROUP}
     networks:
       - traefik-network
     labels:
