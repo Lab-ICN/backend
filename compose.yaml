@@ -57,7 +57,7 @@ services:
     environment:
       CONFIG_FILE: /run/.secret.json
     volumes:
-      - ./user-service/secret.json:/run/.secret.json
+      - ./token-service/secret.json:/run/.secret.json
     networks:
       - app-network
       - traefik-network
