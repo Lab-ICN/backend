@@ -31,14 +31,14 @@ func BearerAuth(key string) func(c *fiber.Ctx) error {
 			return []byte(key), nil
 		}, jwt.WithValidMethods([]string{jwt.SigningMethodHS512.Name}))
 		if err != nil {
-			return &usecase.Error{Code: http.StatusUnauthorized, Message: err.Error()}
+			return &usecase.Error{Code: http.StatusUnauthorized, Message: err.Error(), Err: err}
 		}
 		if !token.Valid {
 			return &usecase.Error{Code: http.StatusUnauthorized}
 		}
 		sub, err := token.Claims.GetSubject()
 		if err != nil {
-			return &usecase.Error{Code: http.StatusBadRequest, Message: msgMissingSub}
+			return &usecase.Error{Code: http.StatusBadRequest, Message: msgMissingSub, Err: err}
 		}
 		id, err := strconv.ParseUint(sub, 10, 64)
 		if err != nil {
@@ -53,18 +53,18 @@ func ApiKeyAuth(key string) func(c *fiber.Ctx) error {
 	return func(c *fiber.Ctx) error {
 		header := c.Get(fiber.HeaderAuthorization, "")
 		if header == "" {
-			return &usecase.Error{Code: http.StatusUnauthorized}
+			return &usecase.Error{Code: http.StatusUnauthorized, Message: msgMissingAuthorization}
 		}
 		sent, err := base64.StdEncoding.DecodeString(header)
 		if err != nil {
-			return &usecase.Error{Code: http.StatusBadRequest}
+			return &usecase.Error{Code: http.StatusBadRequest, Err: err}
 		}
 		actual, err := base64.StdEncoding.DecodeString(key)
 		if err != nil {
-			return &usecase.Error{Code: http.StatusBadRequest}
+			return &usecase.Error{Code: http.StatusBadRequest, Err: err}
 		}
 		if !bytes.Equal(sent, actual) {
-			return &usecase.Error{Code: http.StatusUnauthorized}
+			return &usecase.Error{Code: http.StatusUnauthorized, Message: msgIncorrectApiKey}
 		}
 		return c.Next()
 	}
