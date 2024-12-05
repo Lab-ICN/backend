@@ -8,4 +8,8 @@ deployment/destroy:
 		--filename k8s/ \
 		--filename user-service/k8s/
 
-.PHONY: deployment deployment/destroy
+gomod/tidy:
+	@cd user-service && go mod tidy
+	@cd token-service && go mod tidy
+
+.PHONY: deployment deployment/destroy gomod/tidy
