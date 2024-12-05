@@ -1,4 +1,4 @@
-name: lab-icn-web
+name: web
 
 volumes:
   postgresql-data:
@@ -17,6 +17,7 @@ services:
       - "--providers.docker=true"
       - "--entryPoints.web.address=:80"
       - "--providers.docker.exposedByDefault=false"
+      - "--log.level=DEBUG"
     ports:
       - "3000:80"
     volumes:
@@ -36,9 +37,9 @@ services:
       - traefik-network
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=!PathPrefix(`/backend/v1`)"
+      - "traefik.http.routers.frontend.rule=!PathPrefix(`/api/v1`)"
       - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.docker.network=lab-icn-web_traefik-network"
+      - "traefik.docker.network=web_traefik-network"
 
   user-service:
     build:
@@ -58,9 +59,9 @@ services:
       - postgresql
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.user-service.rule=PathPrefix(`/backend/v1/users`)"
+      - "traefik.http.routers.user-service.rule=PathPrefix(`/api/v1/users`)"
       - "traefik.http.routers.user-service.entrypoints=web"
-      - "traefik.docker.network=lab-icn-web_traefik-network"
+      - "traefik.docker.network=web_traefik-network"
 
   token-service:
     build:
@@ -80,9 +81,9 @@ services:
       - postgresql
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.token-service.rule=PathPrefix(`/backend/v1/tokens`)"
+      - "traefik.http.routers.token-service.rule=PathPrefix(`/api/v1/tokens`)"
       - "traefik.http.routers.token-service.entrypoints=web"
-      - "traefik.docker.network=lab-icn-web_traefik-network"
+      - "traefik.docker.network=web_traefik-network"
 
   postgresql:
     image: postgres:17.2-alpine3.20

@@ -51,7 +51,7 @@ func main() {
 	}
 	r := _fiber.New(cfg, logger)
 	r.Use(cors.New())
-	api := r.Group("/api")
+	api := r.Group("/backend")
 
 	repo := repository.NewTokenPostgreSQL(postgresql)
 	usecase := usecase.NewTokenUsecase(repo, logger, cfg)
