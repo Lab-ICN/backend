@@ -10,7 +10,6 @@ import (
 	"github.com/Lab-ICN/backend/token-service/internal/usecase"
 	"github.com/go-playground/validator"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 	"google.golang.org/api/idtoken"
 )
 
@@ -18,7 +17,6 @@ type Handler struct {
 	usecase  usecase.ITokenUsecase
 	cfg      *config.Config
 	validate *validator.Validate
-	logger   *zap.Logger
 }
 
 func RegisterHandlers(
@@ -26,9 +24,8 @@ func RegisterHandlers(
 	cfg *config.Config,
 	r fiber.Router,
 	validate *validator.Validate,
-	logger *zap.Logger,
 ) {
-	h := Handler{usecase, cfg, validate, logger}
+	h := Handler{usecase, cfg, validate}
 	v1 := r.Group("/v1/tokens")
 	v1.Post("/", h.GenerateHandler)
 	// FIXME: method patch makes panic

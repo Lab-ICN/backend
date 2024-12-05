@@ -4,6 +4,7 @@ type Config struct {
 	Key            string
 	GoogleClientID string
 	PostgreSQL     postgreSQL
+	LogPath        string
 	host           `mapstructure:",squash"`
 	JWT            jwt
 	Development    bool

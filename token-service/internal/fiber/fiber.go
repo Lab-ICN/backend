@@ -7,13 +7,13 @@ import (
 	"github.com/Lab-ICN/backend/token-service/internal/config"
 	"github.com/Lab-ICN/backend/token-service/internal/usecase"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
 )
 
-func New(cfg *config.Config, logger *zap.Logger) *fiber.App {
+func New(cfg *config.Config, log *zerolog.Logger) *fiber.App {
 	return fiber.New(fiber.Config{
-		AppName:      "acceptance-service",
-		ErrorHandler: NewErrorHandler(logger),
+		AppName:      "user-service",
+		ErrorHandler: NewErrorHandler(log),
 		Prefork:      true,
 		RequestMethods: []string{
 			http.MethodHead,
@@ -26,9 +26,14 @@ func New(cfg *config.Config, logger *zap.Logger) *fiber.App {
 	})
 }
 
-func NewErrorHandler(logger *zap.Logger) func(c *fiber.Ctx, err error) error {
+func NewErrorHandler(log *zerolog.Logger) func(c *fiber.Ctx, err error) error {
 	return func(c *fiber.Ctx, err error) error {
-		logger.Error("error occured", zap.Error(err))
+		log.Error().
+			Err(err).
+			Str("method", c.Method()).
+			Str("endpoint", c.Path()).
+			Bytes("body", c.Body()).
+			Msg("error occured")
 		fiberErr := new(fiber.Error)
 		if errors.As(err, &fiberErr) {
 			return c.SendStatus(fiberErr.Code)
