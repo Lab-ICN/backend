@@ -25,6 +25,29 @@ services:
       - traefik-network
     restart: unless-stopped
 
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - 3000
+    env_file: .env
+    environment:
+      AUTH_TRUST_HOST: ${AUTH_TRUST_HOST}
+      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID}
+      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET}
+      NEXT_AUTH_SECRET: ${NEXT_AUTH_SECRET}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_WHATSAPP_GROUP: ${NEXT_PUBLIC_WHATSAPP_GROUP}
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=!PathPrefix(`/api/v1`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.docker.network=lab-icn-web_traefik-network"
+
   user-service:
     build:
       context: ./user-service
