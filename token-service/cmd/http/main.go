@@ -20,6 +20,7 @@ import (
 	"github.com/Lab-ICN/backend/token-service/internal/repository"
 	"github.com/Lab-ICN/backend/token-service/internal/usecase"
 	"github.com/go-playground/validator"
+	"github.com/gofiber/fiber/v2/middleware/cors"
 	"go.uber.org/zap"
 )
 
@@ -49,6 +50,7 @@ func main() {
 		log.Fatalf("Failed to start postgresql connection pool: %v\n", err)
 	}
 	r := _fiber.New(cfg, logger)
+	r.Use(cors.New())
 	api := r.Group("/api")
 
 	repo := repository.NewTokenPostgreSQL(postgresql)
