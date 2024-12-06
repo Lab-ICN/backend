@@ -7,6 +7,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.5
 	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/jackc/pgx/v5 v5.7.1
+	github.com/rs/zerolog v1.33.0
 	google.golang.org/api v0.209.0
 )
 
@@ -34,7 +35,6 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
-	github.com/rs/zerolog v1.33.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasthttp v1.57.0 // indirect
 	github.com/valyala/tcplisten v1.0.0 // indirect
