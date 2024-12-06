@@ -35,11 +35,7 @@ func main() {
 	}
 	ctx := context.Background()
 
-	logfile, err := os.Create(cfg.LogPath)
-	if err != nil {
-		stdlog.Fatalf("creating log file: %w", err)
-	}
-	log := zerolog.New(logfile).With().Timestamp().Logger()
+	log := zerolog.New(os.Stderr).With().Timestamp().Logger()
 	if !cfg.Development {
 		log = log.Level(zerolog.InfoLevel)
 	} else {
