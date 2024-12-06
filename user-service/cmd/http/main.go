@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
+	stdlog "log"
 	"os"
 	"os/signal"
 	"sync"
@@ -15,51 +15,51 @@ import (
 	"github.com/Lab-ICN/backend/user-service/http"
 	"github.com/Lab-ICN/backend/user-service/internal/config"
 	_fiber "github.com/Lab-ICN/backend/user-service/internal/fiber"
-	"github.com/Lab-ICN/backend/user-service/internal/logging"
 	"github.com/Lab-ICN/backend/user-service/internal/postgresql"
 	"github.com/Lab-ICN/backend/user-service/repository"
 	"github.com/Lab-ICN/backend/user-service/usecase"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2/middleware/cors"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
 )
 
 func main() {
 	content, err := os.ReadFile(os.Getenv("CONFIG_FILE"))
 	if err != nil {
-		log.Fatalf("Failed to open config file: %v\n", err)
+		stdlog.Fatalf("Failed to open config file: %v\n", err)
 	}
 	cfg := new(config.Config)
 	if err := json.Unmarshal(content, cfg); err != nil {
-		log.Fatalf("Failed to parse config file: %v\n", err)
+		stdlog.Fatalf("Failed to parse config file: %v\n", err)
 	}
 	ctx := context.Background()
 
-	logger := new(zap.Logger)
-	if cfg.Development {
-		logger, err = logging.NewDevelopment()
-	} else {
-		logger, err = logging.NewProduction()
-	}
+	logfile, err := os.Create(cfg.LogPath)
 	if err != nil {
-		log.Fatalf("Failed to build logging instance: %v\n", err)
+		stdlog.Fatalf("creating log file: %w", err)
+	}
+	log := zerolog.New(logfile).With().Timestamp().Logger()
+	if !cfg.Development {
+		log = log.Level(zerolog.InfoLevel)
+	} else {
+		log = log.Level(zerolog.DebugLevel)
 	}
 	validate := validator.New()
 	postgresql, err := postgresql.NewPool(ctx, cfg)
 	if err != nil {
-		log.Fatalf("Failed to start postgresql connection pool: %v\n", err)
+		stdlog.Fatalf("Failed to start postgresql connection pool: %v\n", err)
 	}
-	r := _fiber.New(cfg, logger)
+	r := _fiber.New(cfg, &log)
 	r.Use(cors.New())
 	api := r.Group("/backend")
 
 	store := repository.NewUserPostgreSQL(postgresql)
-	usecase := usecase.NewUserUsecase(store, logger)
-	http.RegisterHandlers(usecase, cfg, api, validate, logger)
+	usecase := usecase.NewUserUsecase(store, &log)
+	http.RegisterHandlers(usecase, cfg, api, validate)
 
 	go func() {
 		if err := r.Listen(fmt.Sprintf("%s:%d", cfg.Address, cfg.Port)); err != nil {
-			log.Panicf("Server panicked: %v\n", err)
+			stdlog.Panicf("Server panicked: %v\n", err)
 		}
 	}()
 
@@ -75,15 +75,12 @@ func main() {
 			postgresql.Close()
 			return nil
 		},
-		func(ctx context.Context) error {
-			return logger.Sync()
-		},
 	)
 	<-shutdownCtx.Done()
 	if errors.Is(context.DeadlineExceeded, shutdownCtx.Err()) {
-		log.Panicf("Shutdown timeout, force exit...")
+		stdlog.Panicf("Shutdown timeout, force exit...")
 	}
-	log.Println("Gracefully shutdown...")
+	stdlog.Println("Gracefully shutdown...")
 }
 
 func gracefulShutdown(
@@ -99,7 +96,7 @@ func gracefulShutdown(
 			go func() {
 				defer wg.Done()
 				if err := task(ctx); err != nil {
-					log.Printf("Task failed: %v\n", err)
+					stdlog.Printf("Task failed: %v\n", err)
 				}
 			}()
 		}

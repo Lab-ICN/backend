@@ -11,7 +11,6 @@ import (
 	"github.com/Lab-ICN/backend/user-service/usecase"
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
-	"go.uber.org/zap"
 )
 
 const (
@@ -21,7 +20,6 @@ const (
 type Handler struct {
 	usecase  usecase.IUserUsecase
 	validate *validator.Validate
-	logger   *zap.Logger
 }
 
 func RegisterHandlers(
@@ -29,9 +27,8 @@ func RegisterHandlers(
 	cfg *config.Config,
 	r fiber.Router,
 	validate *validator.Validate,
-	logger *zap.Logger,
 ) {
-	h := Handler{usecase, validate, logger}
+	h := Handler{usecase, validate}
 	v1 := r.Group("/v1/users")
 	v1.Get("/self", BearerAuth(cfg.JwtKey), h.Get)
 	v1.Post("/", ApiKeyAuth(cfg.ApiKey), h.Post)

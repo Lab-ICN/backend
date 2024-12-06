@@ -4,6 +4,7 @@ type Config struct {
 	PostgreSQL  postgreSQL
 	JwtKey      string
 	ApiKey      string
+	LogPath     string
 	host        `mapstructure:",squash"`
 	Development bool
 }
