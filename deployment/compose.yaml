@@ -40,6 +40,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.frontend.rule=!PathPrefix(`/backend/v1`)"
       - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
       - "traefik.docker.network=lab-icn-web_traefik-network"
 
   postgresql:
