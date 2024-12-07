@@ -1,0 +1,124 @@
+name: web
+
+volumes:
+  postgresql-data:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge
+  traefik-network:
+    driver: bridge
+  observability-network:
+    driver: bridge
+
+services:
+  traefik:
+    image: traefik:v2.11
+    restart: unless-stopped
+    command:
+      - "--providers.docker=true"
+      - "--entryPoints.web.address=:80"
+      - "--providers.docker.exposedByDefault=false"
+    ports:
+      - 3000:80
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks:
+      - traefik-network
+
+  postgresql:
+    image: postgres:17.2-alpine3.20
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      postgresql_USER: ${POSTGRES_USER}
+      postgresql_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  fluentbit:
+    image: fluent/fluent-bit:3.2.2
+    restart: unless-stopped
+    command:
+      - "--config=/mnt/config/fluentbit.yaml"
+    volumes:
+      - /var/lib/docker/containers:/var/log/containers:ro
+      - ./fluentbit.yaml:/mnt/config/fluentbit.yaml:ro
+      - ./filter.lua:/mnt/script/filter.lua
+    networks:
+      - observability-network
+
+  loki:
+    image: grafana/loki:3.3.1
+    restart: unless-stopped
+    command:
+      - "-config.file=/mnt/config/loki.yaml"
+    volumes:
+      - ./loki.yaml:/mnt/config/loki.yaml:ro
+    networks:
+      - observability-network
+
+  grafana:
+    image: grafana/grafana-oss:11.4.0
+    restart: unless-stopped
+    environment:
+      - GF_SERVER_ROOT_URL=http://localhost:3000/grafana
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
+    networks:
+      - traefik-network
+      - observability-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web_traefik-network"
+      - "traefik.http.services.grafana.loadbalancer.server.port=3000"
+      - "traefik.http.routers.grafana.entrypoints=web"
+      - "traefik.http.routers.grafana.rule=PathPrefix(`/grafana`)"
+
+  user-service:
+    build:
+      context: ../user-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      CONFIG_FILE: /run/.secret.json
+    logging:
+      driver: json-file
+    volumes:
+      - ../user-service/secret.json:/run/.secret.json
+    networks:
+      - app-network
+      - traefik-network
+    depends_on:
+      - postgresql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.user-service.rule=PathPrefix(`/backend/v1/users`)"
+      - "traefik.http.routers.user-service.entrypoints=web"
+      - "traefik.http.services.user-service.loadbalancer.server.port=80"
+      - "traefik.docker.network=web_traefik-network"
+
+  token-service:
+    build:
+      context: ../token-service
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      CONFIG_FILE: /run/.secret.json
+    logging:
+      driver: json-file
+    volumes:
+      - ../token-service/secret.json:/run/.secret.json
+    networks:
+      - app-network
+      - traefik-network
+    depends_on:
+      - postgresql
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.token-service.rule=PathPrefix(`/backend/v1/tokens`)"
+      - "traefik.http.routers.token-service.entrypoints=web"
+      - "traefik.http.services.token-service.loadbalancer.server.port=80"
+      - "traefik.docker.network=web_traefik-network"
