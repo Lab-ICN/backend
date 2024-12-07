@@ -29,6 +29,19 @@ services:
     networks:
       - traefik-network
 
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    networks:
+      - traefik-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.frontend.rule=!PathPrefix(`/backend/v1`)"
+      - "traefik.http.routers.frontend.entrypoints=web"
+      - "traefik.docker.network=lab-icn-web_traefik-network"
+
   postgresql:
     image: postgres:17.2-alpine3.20
     restart: unless-stopped
