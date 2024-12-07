@@ -12,4 +12,22 @@ gomod/tidy:
 	@cd user-service && go mod tidy
 	@cd token-service && go mod tidy
 
-.PHONY: deployment deployment/destroy gomod/tidy
+compose:
+	@docker compose --file infra/compose.dev.yaml \
+		up --detach
+
+compose/down:
+	@docker compose --file infra/compose.dev.yaml down
+
+compose/fresh:
+	@docker compose --file infra/compose.dev.yaml \
+		up --detach --build
+
+docker/prune:
+	@docker system prune --force
+
+docker/clean:
+	@docker rm --force $$(docker ps --all --quiet)
+
+.PHONY: deployment deployment/destroy gomod/tidy compose compose/down
+.PHONY: compose/fresh docker/prune docker/clean
