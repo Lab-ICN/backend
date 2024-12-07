@@ -12,9 +12,9 @@ import (
 
 func New(cfg *config.Config, log *zerolog.Logger) *fiber.App {
 	return fiber.New(fiber.Config{
-		AppName:      "user-service",
-		ErrorHandler: NewErrorHandler(log),
-		Prefork:      true,
+		DisableStartupMessage: !cfg.Development,
+		ErrorHandler:          NewErrorHandler(log),
+		Prefork:               true,
 		RequestMethods: []string{
 			http.MethodHead,
 			http.MethodOptions,
