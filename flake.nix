@@ -34,6 +34,7 @@
           golangci-lint
           go-swag
           k6
+          lua-language-server
           mockgen
           nodePackages.sql-formatter
         ];
