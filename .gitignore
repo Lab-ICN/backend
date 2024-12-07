@@ -1,1 +1,5 @@
 .envrc
+**/secret.yaml
+**/tmp/**
+.env
+frontend/
