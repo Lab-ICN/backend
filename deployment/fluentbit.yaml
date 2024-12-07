@@ -1,0 +1,33 @@
+---
+parsers:
+  - name: dockerparser
+    format: json
+    decode_field_as: json log
+
+pipeline:
+  inputs:
+    - name: tail
+      path: /var/log/containers/*/*-json.log
+      tag: app.error
+      parser: dockerparser
+      refresh_interval: 1
+      processors:
+        logs:
+          - name: content_modifier
+            action: delete
+            key: stream
+          - name: content_modifier
+            action: delete
+            key: time
+  filters:
+    - name: lua
+      match: app.*
+      script: /mnt/script/filter.lua
+      call: filter
+  outputs:
+    - name: stdout
+      match: app.*
+    - name: loki
+      match: app.*
+      host: loki
+      port: 3100

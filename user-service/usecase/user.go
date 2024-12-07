@@ -12,7 +12,7 @@ import (
 
 	"github.com/Lab-ICN/backend/user-service/repository"
 	"github.com/Lab-ICN/backend/user-service/types"
-	"go.uber.org/zap"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -37,15 +37,15 @@ type IUserUsecase interface {
 }
 
 type usecase struct {
-	store  repository.IUserStorage
-	logger *zap.Logger
+	store repository.IUserStorage
+	log   *zerolog.Logger
 }
 
 func NewUserUsecase(
 	store repository.IUserStorage,
-	logger *zap.Logger,
+	log *zerolog.Logger,
 ) IUserUsecase {
-	return &usecase{store, logger}
+	return &usecase{store, log}
 }
 
 func (u *usecase) Register(
@@ -82,7 +82,7 @@ func (u *usecase) RegisterBulkCSV(
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
-			u.logger.Error("failed to close file", zap.Error(err))
+			u.log.Error().Err(err).Msg("closing file buffer")
 		}
 	}()
 	r := csv.NewReader(file)

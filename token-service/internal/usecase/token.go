@@ -11,7 +11,6 @@ import (
 	"github.com/Lab-ICN/backend/token-service/internal/config"
 	"github.com/Lab-ICN/backend/token-service/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
-	"go.uber.org/zap"
 )
 
 type ITokenUsecase interface {
@@ -21,13 +20,12 @@ type ITokenUsecase interface {
 }
 
 type usecase struct {
-	store  repository.ITokenStorage
-	logger *zap.Logger
-	cfg    *config.Config
+	store repository.ITokenStorage
+	cfg   *config.Config
 }
 
-func NewTokenUsecase(store repository.ITokenStorage, logger *zap.Logger, cfg *config.Config) ITokenUsecase {
-	return &usecase{store, logger, cfg}
+func NewTokenUsecase(store repository.ITokenStorage, cfg *config.Config) ITokenUsecase {
+	return &usecase{store, cfg}
 }
 
 func (u *usecase) Generate(ctx context.Context, email string) (string, string, error) {
