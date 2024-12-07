@@ -1,4 +1,4 @@
-name: web
+name: lab-icn-web
 
 volumes:
   postgresql-data:
@@ -99,7 +99,7 @@ services:
       - "traefik.http.routers.user-service.rule=PathPrefix(`/backend/v1/users`)"
       - "traefik.http.routers.user-service.entrypoints=web"
       - "traefik.http.services.user-service.loadbalancer.server.port=80"
-      - "traefik.docker.network=web_traefik-network"
+      - "traefik.docker.network=lab-icn-web_traefik-network"
 
   token-service:
     build:
@@ -122,4 +122,4 @@ services:
       - "traefik.http.routers.token-service.rule=PathPrefix(`/backend/v1/tokens`)"
       - "traefik.http.routers.token-service.entrypoints=web"
       - "traefik.http.services.token-service.loadbalancer.server.port=80"
-      - "traefik.docker.network=web_traefik-network"
+      - "traefik.docker.network=lab-icn-web_traefik-network"
