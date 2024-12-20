@@ -2,46 +2,29 @@ name: lab-icn-web
 
 volumes:
   postgresql-data:
-    driver: local
   grafana-data:
-    driver: local
 
 networks:
-  app-network:
-    driver: bridge
-  traefik-network:
-    driver: bridge
-  observability-network:
-    driver: bridge
+  external:
+  internal:
 
 services:
-  traefik:
-    image: traefik:v2.11
+  nginx:
+    image: nginx:1.27-alpine3.20
     restart: unless-stopped
-    command:
-      - "--providers.docker=true"
-      - "--entryPoints.web.address=:80"
-      - "--providers.docker.exposedByDefault=false"
     ports:
       - 3000:80
     volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
     networks:
-      - traefik-network
+      - external
 
   frontend:
     build:
       context: ../frontend
-      dockerfile: Dockerfile
     restart: unless-stopped
     networks:
-      - traefik-network
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.frontend.rule=!PathPrefix(`/backend/v1`)"
-      - "traefik.http.routers.frontend.entrypoints=web"
-      - "traefik.http.services.frontend.loadbalancer.server.port=3000"
-      - "traefik.docker.network=lab-icn-web_traefik-network"
+      - external
 
   postgresql:
     image: postgres:17.2-alpine3.20
@@ -53,7 +36,7 @@ services:
     volumes:
       - postgresql-data:/var/lib/postgresql/data
     networks:
-      - app-network
+      - internal
 
   fluentbit:
     image: fluent/fluent-bit:3.2.2
@@ -65,7 +48,7 @@ services:
       - ./fluentbit.yaml:/mnt/config/fluentbit.yaml:ro
       - ./filter.lua:/mnt/script/filter.lua
     networks:
-      - observability-network
+      - internal
 
   loki:
     image: grafana/loki:3.3.1
@@ -75,13 +58,14 @@ services:
     volumes:
       - ./loki.yaml:/mnt/config/loki.yaml:ro
     networks:
-      - observability-network
+      - internal
 
   grafana:
     image: grafana/grafana-oss:11.4.0
     restart: unless-stopped
     env_file: .env
     environment:
+      - GF_SERVER_ROOT_URL=http://localhost/grafana
       - GF_SERVER_HTTP_PORT=${GF_SERVER_HTTP_PORT:?error}
       - GF_SECURITY_ADMIN_USER=${GF_SECURITY_ADMIN_USER:?error}
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD:?error}
@@ -90,7 +74,8 @@ services:
     volumes:
       - grafana-data:/var/lib/grafana
     networks:
-      - observability-network
+      - internal
+      - external
 
   user-service:
     build:
@@ -104,16 +89,10 @@ services:
     volumes:
       - ../user-service/secret.json:/run/.secret.json
     networks:
-      - app-network
-      - traefik-network
+      - internal
+      - external
     depends_on:
       - postgresql
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.user-service.rule=PathPrefix(`/backend/v1/users`)"
-      - "traefik.http.routers.user-service.entrypoints=web"
-      - "traefik.http.services.user-service.loadbalancer.server.port=80"
-      - "traefik.docker.network=lab-icn-web_traefik-network"
 
   token-service:
     build:
@@ -127,13 +106,7 @@ services:
     volumes:
       - ../token-service/secret.json:/run/.secret.json
     networks:
-      - app-network
-      - traefik-network
+      - internal
+      - external
     depends_on:
       - postgresql
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.token-service.rule=PathPrefix(`/backend/v1/tokens`)"
-      - "traefik.http.routers.token-service.entrypoints=web"
-      - "traefik.http.services.token-service.loadbalancer.server.port=80"
-      - "traefik.docker.network=lab-icn-web_traefik-network"
